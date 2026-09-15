@@ -6,7 +6,7 @@ import type { ScrapedPage, ScrapeResult } from "./types";
 const USER_AGENT =
   "Mozilla/5.0 (compatible; CompanyAnalysisBot/1.0; +https://example.com/bot)";
 const FETCH_TIMEOUT_MS = 8000;
-const MAX_SUBPAGES = 5;
+const MAX_SUBPAGES = 8;
 const MAX_TEXT_PER_PAGE = 6000;
 
 // 就活の観点で優先的に読みたいページのカテゴリとキーワード
@@ -33,13 +33,23 @@ const CATEGORY_KEYWORDS: { category: string; label: string; patterns: RegExp[] }
   },
   {
     category: "news",
-    label: "ニュース・IR",
-    patterns: [/news/i, /press/i, /\bir\b/i, /investor/i, /ニュース/, /プレスリリース/, /IR情報/],
+    label: "ニュース",
+    patterns: [/news/i, /press/i, /ニュース/, /プレスリリース/, /トピックス/],
+  },
+  {
+    category: "ir",
+    label: "IR・業績",
+    patterns: [/\bir\b/i, /investor/i, /決算/, /業績/, /財務/, /IR情報/],
   },
   {
     category: "history",
     label: "沿革",
     patterns: [/history/i, /沿革/],
+  },
+  {
+    category: "csr",
+    label: "サステナビリティ・社会貢献",
+    patterns: [/csr/i, /sustainab/i, /サステナ/, /社会貢献/, /esg/i],
   },
 ];
 
@@ -164,6 +174,20 @@ function findCategorizedLinks(
   return found;
 }
 
+function guessCompanyName($: cheerio.CheerioAPI, hostname: string): string {
+  const ogSiteName = $('meta[property="og:site_name"]').attr("content")?.trim();
+  if (ogSiteName) return ogSiteName;
+
+  const title = $("title").first().text().trim();
+  if (title) {
+    // 「会社名｜キャッチコピー」のようなタイトルからキャッチコピー部分を除去
+    const parts = title.split(/[|｜\-–—:：]/).map((p) => p.trim()).filter(Boolean);
+    if (parts.length > 0) return parts[0];
+  }
+
+  return hostname;
+}
+
 export async function scrapeCompanySite(inputUrl: string): Promise<ScrapeResult> {
   const rootUrl = normalizeUrl(inputUrl);
   const warnings: string[] = [];
@@ -175,6 +199,7 @@ export async function scrapeCompanySite(inputUrl: string): Promise<ScrapeResult>
   const rootHtml = await rootRes.text();
   const $root = cheerio.load(rootHtml);
   const siteTitle = $root("title").first().text().trim() || rootUrl.hostname;
+  const companyNameGuess = guessCompanyName($root, rootUrl.hostname);
 
   const pages: ScrapedPage[] = [
     {
@@ -222,5 +247,5 @@ export async function scrapeCompanySite(inputUrl: string): Promise<ScrapeResult>
     }
   });
 
-  return { rootUrl: rootUrl.toString(), siteTitle, pages, warnings };
+  return { rootUrl: rootUrl.toString(), siteTitle, companyNameGuess, pages, warnings };
 }

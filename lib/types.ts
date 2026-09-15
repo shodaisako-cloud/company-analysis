@@ -8,31 +8,61 @@ export interface ScrapedPage {
 export interface ScrapeResult {
   rootUrl: string;
   siteTitle: string;
+  companyNameGuess: string;
   pages: ScrapedPage[];
   warnings: string[];
+}
+
+export interface WebSnippet {
+  title: string;
+  url: string;
+  snippet: string;
+  query: string;
+}
+
+export interface SourceRef {
+  url: string;
+  label: string;
+  type: "official" | "web";
 }
 
 export interface AnalysisReport {
   companyName: string;
   summary: string;
-  business: {
-    overview: string;
-    products: string[];
-    industryPosition: string;
+
+  basicInfo: {
+    founded: string;
+    capital: string;
+    locations: string;
+    employees: string;
+    other: string;
   };
-  strengths: string[];
-  risks: string[];
-  culture: {
-    findings: string[];
+
+  philosophy: {
+    mission: string;
+    vision: string;
     values: string[];
   };
-  growthAndNews: string[];
+
+  competitorComparison: string[];
+  recruitInfo: string[];
+  financialTrend: string[];
+  managementPolicyHistory: string[];
+  keyProjects: string[];
+  futureOutlook: string[];
+  recentNews: string[];
+  cultureAndWorkStyle: string[];
+  employeeVoice: string[];
+  risksAndDisputes: string[];
+  other: string[];
+
   jobHuntingTips: {
     motivationHints: string[];
     likelyInterviewQuestions: string[];
     questionsToAsk: string[];
     fitPoints: string[];
   };
-  sources: { url: string; label: string }[];
+
+  sources: SourceRef[];
   confidenceNote: string;
 }
